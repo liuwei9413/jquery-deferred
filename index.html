@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Deferred应用</title>
+	<script type="text/javascript" src="http://apps.bdimg.com/libs/jquery/1.9.1/jquery.min.js"></script>
+</head>
+<body>
+	<input type="text" value="">
+	<input type="text" value="">
+	<input type="text" value="">
+	<input type="text" value="">
+	<div id="box"></div>
+
+	<script>
+		$(function() {
+			//一、常规ajax写法
+			// $.ajax({
+			// 	url: 'http://localhost/deferred/index.php',
+			// 	success: function(res) {
+			// 		alert(res)
+			// 	},
+			// 	error: function() {
+			// 		alert('出错')
+			// 	}
+			// });
+
+
+			//二、新写法
+			// $.ajax('http://localhost/deferred/index.php')
+			// .done(function(res) { alert(res) })
+			// .fail(function() { alert('出错') });
+
+
+			//三、指定同一操作的多个回调函数
+			// $.ajax('http://localhost/deferred/index.php')
+			// .done(function(res) { alert(res) })
+			// .fail(function() { alert('出错') })
+			// .done(function() { alert('同一操作的第二个回调函数') });
+
+
+			//四、为多个操作指定回调函数 都成功则成功 否则走fail
+			// $.when($.ajax('http://localhost/deferred/index.php'), $.ajax('http://localhost/deferred/index2.php'))
+			// .done(function(res) { console.log(res) })
+			// .fail(function() { alert('出错') });
+
+
+			//五、普通操作(非ajax操作)的回调函数接口（上）
+			// var dtd = $.Deferred(); //创建deferred对象	这里dtd是全局变量 容易被改写
+			// var wait = function(dtd) {
+			// 	var task = function() {
+			// 		alert('task执行完毕');
+			// 		// dtd.resolve();	//改变deferred对象的执行状态
+			// 		dtd.reject();
+			// 	};
+
+			// 	setTimeout(task, 3000);
+			// 	return dtd;	//必须返回deferred对象，才可以执行链式操作 
+			// };
+			// dtd.resolve();	//改写dtd对象执行状态 导致立即执行
+
+			// $.when(wait(dtd))	//$.when()只接受deferred对象
+			// .done(function() { alert('成功') })
+			// .fail(function() { alert('出错') });
+
+
+			//六、 deferred.promise()没有参数时，返回一个新的deferred对象，该对象的运行状态无法被改变；接受参数时，作用为在参数对象上部署deferred接口。
+			// var dtd = $.Deferred();
+			// var wait = function(dtd) {
+			// 	var task = function() {
+			// 		alert('task执行完毕');
+			// 		dtd.resolve();
+			// 	};
+
+			// 	setTimeout(task, 3000);
+			// 	return dtd.promise();	//返回promise对象
+			// };
+
+			// var d = wait(dtd); //使用返回的promise对象
+
+			// $.when(d)
+			// .done(function() { alert('成功') })
+			// .fail(function() { alert('出错') });
+			// // d.resolve();	//报错
+
+			//更好的写法 在函数内部新建Deferred对象
+			// var wait = function(dtd) {
+			// 	var dtd = $.Deferred();
+			// 	var task = function() {
+			// 		alert('task执行完毕');
+			// 		dtd.resolve();
+			// 	};
+
+			// 	setTimeout(task, 2000);
+			// 	return dtd.promise();
+			// };
+
+			// $.when(wait())
+			// .done(function() {alert('成功')})
+			// .fail(function() {alert('出错')})
+
+
+			//七、普通操作(非ajax操作)的回调函数接口（中） $.Deferred()可以接受一个函数名（注意，是函数名）作为参数，$.Deferred()所生成的deferred对象将作为这个函数的默认参数。
+			// var wait = function(dtd) {
+			// 	var task = function() {
+			// 		alert('task执行完毕');
+			// 		dtd.resolve();
+			// 	};
+
+			// 	setTimeout(task, 1000);
+			// 	return dtd.promise();	//返回promise对象
+			// };
+
+			// $.Deferred(wait)
+			// .done(function() {alert('成功')})
+			// .fail(function() {alert('出错')})
+
+
+			//八、普通操作的回调函数接口（下） dtd.promise(wait) 给wait部署deferred接口
+			// var dtd = $.Deferred();
+			// var wait = function(dtd) {
+			// 	var task = function() {
+			// 		alert('task执行完毕');
+			// 		dtd.resolve();
+			// 	}
+			// 	setTimeout(task, 1000);
+			// };
+
+			// dtd.promise(wait);	//给wait部署deferred接口
+			// wait.done(function() {alert('成功')})
+			// .fail(function() {alert('失败')});
+			// wait(dtd);
+
+
+			//九、.then() 相当于.done()和.fail()
+			// $.when($.ajax('http://localhost/deferred/index.php'))
+			// .then(function(res) { alert(res) }, function() { alert('出错') });
+
+
+			// $.when($.ajax('http://localhost/deferred/index.php'), $.ajax('http://localhost/deferred/index2.php'))
+			// .then(function(resA, resB) {
+			// 	console.log(resA);
+			// 	console.log(resB);
+			// })
+		});
+
+
+		//动态显示进度 dtd.progress()和notify()
+		$(function() {
+			var inputs = $('input');
+			var box = $('#box');
+			var dtd = $.Deferred();
+
+			dtd.progress(function(inputLength) {
+				var l = inputs.length;
+				var percent = (inputLength / l * 100).toFixed(0) + '%';
+				box.html(percent);
+			});
+
+			$('input').on('change', function() {
+				$(this).attr('value', $(this).val());
+				var inputReady = $('input[value!=""]').length;
+				console.log(inputReady)
+				dtd.notify(inputReady);
+				if ( inputReady === inputs.length ) {
+					dtd.resolve();
+				}
+			});
+
+		})
+
+	</script>
+</body>
+</html>
